@@ -48,6 +48,7 @@ public class MainActivity extends Activity {
     TextView mSelectedFfileNameText;
     String mSelectedFileName;
     File mRootdDirectory;
+    File mDatadDirectory;
     ThreadPlay threadPlay = new ThreadPlay();
 
     private TextView tv_start;
@@ -120,6 +121,7 @@ public class MainActivity extends Activity {
         mFileList = (ListView) findViewById(R.id.listSongs);
         mSelectedFfileNameText = (TextView) findViewById(R.id.Display_SelectedFile);
         mRootdDirectory = Environment.getExternalStorageDirectory();
+        mDatadDirectory = getExternalFilesDir("");
         mSelectedFfileNameText.setText("");
         listFiles();
 
@@ -210,7 +212,11 @@ public class MainActivity extends Activity {
 
     private void listFiles() {
         Filter myfilter = new Filter();
-        String[] children = mRootdDirectory.list(myfilter);
+        String[] mRootdDirectoryChildren = mRootdDirectory.list(myfilter);
+        String[] mDatadDirectoryChildren = mDatadDirectory.list(myfilter);
+        String[] children = new String[mRootdDirectoryChildren.length + mDatadDirectoryChildren.length];
+        System.arraycopy(mRootdDirectoryChildren, 0, children, 0, mRootdDirectoryChildren.length);
+        System.arraycopy(mDatadDirectoryChildren, 0, children, mRootdDirectoryChildren.length, mDatadDirectoryChildren.length);
         ArrayAdapter<String> spinnerArrayAdapter = new ArrayAdapter<String>(this, R.layout.file_row, children);
         mFileList.setAdapter(spinnerArrayAdapter);
         mFileList.setFocusable(true);
@@ -267,10 +273,13 @@ public class MainActivity extends Activity {
             this.mFileName = filename;
         }
         public void run() {
-            try {
-                mTempFile = new File(Environment.getExternalStorageDirectory().getAbsoluteFile() + "/" + mFileName);
-            } catch (Exception ex) {
+            mTempFile = new File(Environment.getExternalStorageDirectory().getAbsoluteFile() + "/" + mFileName);
+            if(!mTempFile.exists()) {
+                mTempFile = new File(getApplicationContext().getExternalFilesDir(""), mFileName);
+            }
+            if(!mTempFile.exists()) {
                 Log.e(TAG,"Fail to find the file");
+                return;
             }
             try {
                 minputStream = new FileInputStream(mTempFile);
